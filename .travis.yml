@@ -1,0 +1,24 @@
+sudo: required
+language: generic
+
+services:
+  - docker
+
+before_install:
+  - docker build -t ceeprian/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true ceeprian/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t ceeprian/multi-client ./client
+  - docker build -t ceeprian/multi-nginx ./nginx
+  - docker build -t ceeprian/multi-server ./server
+  - docker build -t ceeprian/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push ceeprian/multi-client
+  - docker push ceeprian/multi-nginx
+  - docker push ceeprian/multi-server
+  - docker push ceeprian/multi-worker
